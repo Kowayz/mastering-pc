@@ -74,6 +74,51 @@ function render() {
   mk(gt, fmt(longest.totalMs), 'Le plus long', longest.name);
   mk(gt, fmt(totalMs), 'Temps total cumulé');
 
+  // ── temps moyen par étape ──
+  const stepAgg = new Map();
+  for (const h of H) {
+    if (!Array.isArray(h.stepTimes)) continue;
+    for (const st of h.stepTimes) {
+      if (!st || typeof st.ms !== 'number') continue;
+      const e = stepAgg.get(st.label) || { sum: 0, n: 0 };
+      e.sum += st.ms; e.n++; stepAgg.set(st.label, e);
+    }
+  }
+  const stepsWrap = document.getElementById('stepsWrap');
+  const ss = document.getElementById('statsSteps'); ss.innerHTML = '';
+  if (stepAgg.size) {
+    stepsWrap.hidden = false;
+    const rows = [...stepAgg.entries()].map(([label, e]) => ({ label, avg: e.sum / e.n, n: e.n }));
+    const max = Math.max(...rows.map((r) => r.avg)) || 1;
+    for (const r of rows) {
+      const row = el(`<div class="stepbar"><span class="stepbar__lab"></span><span class="stepbar__track"><span class="stepbar__fill"></span></span><span class="stepbar__val"></span></div>`);
+      row.querySelector('.stepbar__lab').textContent = r.label;
+      row.querySelector('.stepbar__fill').style.width = Math.max(4, (r.avg / max) * 100) + '%';
+      row.querySelector('.stepbar__val').textContent = fmtShort(r.avg);
+      row.title = `${r.label} · moyenne sur ${r.n} poste${r.n > 1 ? 's' : ''}`;
+      ss.appendChild(row);
+    }
+  } else {
+    stepsWrap.hidden = true;
+  }
+
+  // ── activité sur 14 jours ──
+  const trend = document.getElementById('statsTrend'); trend.innerHTML = '';
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const counts = [];
+  for (let i = 13; i >= 0; i--) { const start = today0.getTime() - i * 86400000; const c = H.filter((h) => h.finishedAt >= start && h.finishedAt < start + 86400000).length; counts.push({ ts: start, c }); }
+  const maxC = Math.max(1, ...counts.map((d) => d.c));
+  for (const d of counts) {
+    const bar = el(`<div class="tbar"><span class="tbar__col"><span class="tbar__fill"></span></span><span class="tbar__n"></span><span class="tbar__day"></span></div>`);
+    const fill = bar.querySelector('.tbar__fill');
+    fill.style.height = (d.c / maxC * 100) + '%';
+    if (d.c) fill.classList.add('has');
+    bar.querySelector('.tbar__n').textContent = d.c || '';
+    bar.querySelector('.tbar__day').textContent = new Date(d.ts).toLocaleDateString('fr-FR', { day: 'numeric' });
+    bar.title = `${shortDate(d.ts)} · ${d.c} poste${d.c > 1 ? 's' : ''}`;
+    trend.appendChild(bar);
+  }
+
   // ── journal groupé par jour ──
   const log = document.getElementById('log'); log.innerHTML = '';
   let curKey = null, curList = null;

@@ -8,8 +8,8 @@
    ════════════════════════════════════════════════════════════ */
 
 const STEPS = [
-  'Windows', 'Hash', 'Autopilote',
-  'Synchro / Renommage', 'Windows Update / MAJ BIOS',
+  'Hash', 'Pré-approvisionnement / Resceller',
+  'Rename / Synchro', 'Windows Update / MAJ BIOS',
 ];
 
 const PALETTE = [
@@ -27,10 +27,44 @@ function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } c
 // ── helpers ────────────────────────────────────────────────────
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 function fmt(ms) { const t = Math.max(0, Math.floor(ms / 1000)); const p = (n) => String(n).padStart(2, '0'); return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}:${p(t % 60)}`; }
+function fmtMin(ms) { const t = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60; if (h) return `${h}h${String(m).padStart(2, '0')}`; if (m) return `${m} min`; return `${s} s`; }
+function clampInt(v, lo, hi) { v = parseInt(v, 10); if (isNaN(v)) v = lo; return Math.max(lo, Math.min(hi, v)); }
 function elapsed(pc) { const live = (pc.status === 'running' && pc.startedAt) ? Date.now() - pc.startedAt : 0; return pc.acc + live; }
 function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
 function meta(pc) { return { cur: pc.steps.findIndex((s) => !s.done), d: pc.steps.filter((s) => s.done).length }; }
 function stepText(pc) { const { cur } = meta(pc); return cur === -1 ? '✓ Toutes les étapes faites' : `Étape ${cur + 1} · ${pc.steps[cur].label}`; }
+// Durée travaillée de chaque étape (basée sur le temps écoulé, pauses exclues). Renvoie un tableau ms|null aligné sur pc.steps.
+function computeStepTimes(pc) {
+  const timed = pc.steps.map((s, i) => ({ i, atMs: typeof s.atMs === 'number' ? s.atMs : null }))
+    .filter((s) => pc.steps[s.i].done && s.atMs != null)
+    .sort((a, b) => a.atMs - b.atMs);
+  const out = pc.steps.map(() => null);
+  let prev = 0;
+  for (const s of timed) { out[s.i] = Math.max(0, s.atMs - prev); prev = s.atMs; }
+  return out;
+}
+// Prochain nom auto : reprend le préfixe + plus grand nombre trouvé, incrémenté.
+function nextName() {
+  const names = [...store.pcs.map((p) => p.name), ...store.history.map((h) => h.name)];
+  let best = null;
+  for (const nm of names) {
+    const m = /^(.*?)(\d+)\s*$/.exec(nm || '');
+    if (!m) continue;
+    const num = parseInt(m[2], 10);
+    if (!best || num >= best.num) best = { prefix: m[1], num, len: m[2].length };
+  }
+  if (!best) return 'PCP2601';
+  return best.prefix + String(best.num + 1).padStart(best.len, '0');
+}
+// Génère n noms à partir d'un nom de départ (incrémente la partie numérique).
+function genNames(start, n) {
+  const m = /^(.*?)(\d+)\s*$/.exec(start || '');
+  const out = [];
+  if (!m) { for (let i = 0; i < n; i++) out.push(i === 0 ? (start || 'PC') : `${start} ${i + 1}`); return out; }
+  const prefix = m[1], len = m[2].length, base = parseInt(m[2], 10);
+  for (let i = 0; i < n; i++) out.push(prefix + String(base + i).padStart(len, '0'));
+  return out;
+}
 function isToday(ts) { const d = new Date(ts), n = new Date(); return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate(); }
 function clk(ts) { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}h${String(d.getMinutes()).padStart(2, '0')}`; }
 
@@ -102,7 +136,11 @@ function register(pc, node, refs) {
   const pauseIco = node.querySelector('.js-pause-ico');
   function sync() {
     const { d } = meta(pc);
-    refs.segs.forEach((b, i) => b.classList.toggle('done', pc.steps[i].done));
+    const stimes = computeStepTimes(pc);
+    refs.segs.forEach((b, i) => {
+      b.classList.toggle('done', pc.steps[i].done);
+      b.title = stimes[i] != null ? `${pc.steps[i].label} · ${fmtMin(stimes[i])}` : pc.steps[i].label;
+    });
     if (refs.countEl) refs.countEl.textContent = refs.countSuffix ? `${d} / ${pc.steps.length} étapes` : `${d} / ${pc.steps.length}`;
     if (refs.stepEl) refs.stepEl.textContent = stepText(pc);
     if (refs.statusEl) refs.statusEl.textContent = pc.status === 'running' ? 'En cours' : pc.status === 'paused' ? 'En pause' : 'À démarrer';
@@ -175,7 +213,7 @@ let dragSrcSlot = null;
 
 // Range les PC dans 6 emplacements (ou plus si >6 PC). Renvoie un tableau slot→pc.
 function normalizeSlots() {
-  const n = Math.max(6, store.pcs.length);
+  const n = Math.max(6, Math.ceil(store.pcs.length / 6) * 6);
   const occ = new Array(n).fill(null);
   for (const pc of store.pcs) {
     if (Number.isInteger(pc.slot) && pc.slot >= 0 && pc.slot < n && occ[pc.slot] === null) occ[pc.slot] = pc;
@@ -241,8 +279,24 @@ function renderBoard() {
   if (!bench && store.pcs.length === 0) return;
 
   if (bench) {
+    board.className = 'board board--benchwrap';
     const occ = normalizeSlots();
-    occ.forEach((pc, i) => { const node = pc ? buildBench(pc, i + 1) : emptySlot(i + 1); wireBenchDrag(node, i, !!pc); board.appendChild(node); });
+    const groups = Math.ceil(occ.length / 6);
+    store.benchNames = store.benchNames || {};
+    for (let g = 0; g < groups; g++) {
+      const title = el(`<input class="bench-title" maxlength="24" autocomplete="off" aria-label="Nom de l'établi" />`);
+      title.value = store.benchNames[g] || `Établi ${g + 1}`;
+      title.addEventListener('input', () => { store.benchNames[g] = title.value; persist(); });
+      board.appendChild(title);
+      const grid = el('<div class="board--bench"></div>');
+      occ.slice(g * 6, g * 6 + 6).forEach((pc, j) => {
+        const i = g * 6 + j;
+        const node = pc ? buildBench(pc, i + 1) : emptySlot(i + 1);
+        wireBenchDrag(node, i, !!pc);
+        grid.appendChild(node);
+      });
+      board.appendChild(grid);
+    }
   } else if (store.view === 'table') {
     const wrap = el(`<table class="tbl"><thead><tr><th>Poste</th><th>Chrono</th><th>Statut</th><th>Progression</th><th>Étape en cours</th><th class="th-right">Action</th></tr></thead><tbody></tbody></table>`);
     board.appendChild(wrap);
@@ -255,18 +309,120 @@ function renderBoard() {
 }
 
 // ── actions ────────────────────────────────────────────────────
-function addPc() {
+function mkBlank(name) {
   const accent = PALETTE[store.seed % PALETTE.length]; store.seed++;
-  const pc = { id: uid(), name: 'PCP26', status: 'idle', acc: 0, startedAt: null, accent, steps: STEPS.map((label) => ({ label, done: false })), createdAt: Date.now() };
+  return { id: uid(), name, status: 'idle', acc: 0, startedAt: null, accent, steps: STEPS.map((label) => ({ label, done: false })), createdAt: Date.now() };
+}
+
+function addPc() {
+  const pc = mkBlank(nextName());
   store.pcs.push(pc); persist();
   renderBoard(); refreshChrome();
   const e = cards.get(pc.id);
   if (e) { const i = e.node.querySelector('.card__name'); if (i) { i.focus(); const n = i.value.length; i.setSelectionRange(n, n); } }
 }
 
+function createBatch(start, n) {
+  for (const name of genNames(start, n)) store.pcs.push(mkBlank(name));
+  persist(); renderBoard(); refreshChrome();
+}
+
+// ── modal générique ────────────────────────────────────────────
+function openModal(title, contentNode) {
+  const back = el(`<div class="modal-back"><div class="modal" role="dialog" aria-modal="true"><div class="modal__head"><h2 class="modal__title"></h2><button class="modal__x" type="button" aria-label="Fermer">×</button></div><div class="modal__body"></div></div></div>`);
+  back.querySelector('.modal__title').textContent = title;
+  back.querySelector('.modal__body').appendChild(contentNode);
+  function close() { back.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  back.querySelector('.modal__x').addEventListener('click', close);
+  back.addEventListener('click', (e) => { if (e.target === back) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(back);
+  return { close, root: back };
+}
+
+// ── création en masse ──────────────────────────────────────────
+function openAddMany() {
+  const body = el(`<form class="mform">
+    <label class="mfield"><span>Nom de départ</span><input name="start" type="text" maxlength="40" autocomplete="off" /></label>
+    <label class="mfield"><span>Nombre de PC</span><input name="count" type="number" min="1" max="60" value="6" /></label>
+    <p class="mform__hint"></p>
+    <div class="mform__actions"><button type="button" class="key key--sm js-cancel">Annuler</button><button type="submit" class="key key--brand key--sm">Créer</button></div>
+  </form>`);
+  const startI = body.querySelector('[name=start]'); startI.value = nextName();
+  const countI = body.querySelector('[name=count]');
+  const hint = body.querySelector('.mform__hint');
+  function preview() {
+    const n = clampInt(countI.value, 1, 60);
+    const names = genNames(startI.value.trim() || 'PCP2601', n);
+    hint.textContent = n > 1 ? `Créera ${n} postes : ${names[0]} → ${names[n - 1]}` : `Créera 1 poste : ${names[0]}`;
+  }
+  startI.addEventListener('input', preview); countI.addEventListener('input', preview); preview();
+  const m = openModal('Créer plusieurs PC', body);
+  body.querySelector('.js-cancel').addEventListener('click', m.close);
+  body.addEventListener('submit', (e) => { e.preventDefault(); createBatch(startI.value.trim() || 'PCP2601', clampInt(countI.value, 1, 60)); m.close(); });
+  startI.focus(); startI.select();
+}
+
+// ── outils : sauvegarde / restauration / migration ─────────────
+function openTools() {
+  const body = el(`<div class="tools">
+    <button class="tool js-export" type="button"><strong>↧ Sauvegarder</strong><span>Télécharger un fichier de sauvegarde (.json)</span></button>
+    <button class="tool js-import" type="button"><strong>↥ Restaurer</strong><span>Charger une sauvegarde — remplace les données actuelles</span></button>
+    <button class="tool js-migrate" type="button"><strong>⟳ Migrer les étapes</strong><span>Appliquer la liste d'étapes actuelle aux PC en cours</span></button>
+    <input type="file" accept="application/json,.json" class="js-file" hidden />
+  </div>`);
+  const m = openModal('Outils', body);
+  const file = body.querySelector('.js-file');
+  body.querySelector('.js-export').addEventListener('click', exportData);
+  body.querySelector('.js-import').addEventListener('click', () => file.click());
+  file.addEventListener('change', () => importData(file.files[0], m.close));
+  body.querySelector('.js-migrate').addEventListener('click', () => { migrateSteps(); m.close(); });
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(store, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+  const a = document.createElement('a'); a.href = url; a.download = `mastering-sauvegarde-${stamp}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function importData(fileObj, done) {
+  if (!fileObj) return;
+  const r = new FileReader();
+  r.onload = () => {
+    let data; try { data = JSON.parse(r.result); } catch (e) { alert('Fichier illisible : JSON invalide.'); return; }
+    if (!data || !Array.isArray(data.pcs) || !Array.isArray(data.history)) { alert('Fichier non reconnu (il manque « pcs » ou « history »).'); return; }
+    if (!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')) return;
+    store = data;
+    if (!VIEWS.includes(store.view)) store.view = 'rows';
+    if (typeof store.seed !== 'number') store.seed = store.pcs.length;
+    persist();
+    switchBtns.forEach((b) => b.classList.toggle('active', b.dataset.view === store.view));
+    renderBoard(); renderHistory(); refreshChrome();
+    if (done) done();
+  };
+  r.readAsText(fileObj);
+}
+
+function migrateSteps() {
+  if (!store.pcs.length) { alert('Aucun PC en cours à migrer.'); return; }
+  if (!confirm(`Appliquer la liste d'étapes actuelle aux ${store.pcs.length} PC en cours ?\nLes étapes cochées portant le même nom restent cochées.`)) return;
+  for (const pc of store.pcs) {
+    const prev = new Map(pc.steps.map((s) => [s.label, s]));
+    pc.steps = STEPS.map((label) => { const old = prev.get(label); const step = { label, done: old ? !!old.done : false }; if (old && typeof old.atMs === 'number') step.atMs = old.atMs; return step; });
+  }
+  persist(); renderBoard(); refreshChrome();
+}
+
 function toggleStep(pc, idx) {
   pc.steps[idx].done = !pc.steps[idx].done;
-  if (pc.steps[idx].done && pc.status === 'idle') { pc.status = 'running'; pc.startedAt = Date.now(); if (!pc.firstStartedAt) pc.firstStartedAt = pc.startedAt; } // démarrage AUTO
+  if (pc.steps[idx].done) {
+    if (pc.status === 'idle') { pc.status = 'running'; pc.startedAt = Date.now(); if (!pc.firstStartedAt) pc.firstStartedAt = pc.startedAt; } // démarrage AUTO
+    pc.steps[idx].atMs = elapsed(pc); // horodatage (temps travaillé) pour le temps par étape
+  } else { delete pc.steps[idx].atMs; }
   persist();
   const e = cards.get(pc.id); if (e) e.sync();
   refreshChrome();
@@ -282,7 +438,8 @@ function pauseToggle(pc) {
 }
 
 function finishPc(pc) {
-  store.history.unshift({ name: pc.name.trim() || 'PC sans nom', totalMs: elapsed(pc), stepsDone: pc.steps.filter((s) => s.done).length, stepsTotal: pc.steps.length, startedAt: pc.firstStartedAt || (Date.now() - elapsed(pc)), finishedAt: Date.now(), accent: pc.accent });
+  const stepTimes = computeStepTimes(pc).map((ms, i) => ({ label: pc.steps[i].label, ms }));
+  store.history.unshift({ name: pc.name.trim() || 'PC sans nom', totalMs: elapsed(pc), stepsDone: pc.steps.filter((s) => s.done).length, stepsTotal: pc.steps.length, startedAt: pc.firstStartedAt || (Date.now() - elapsed(pc)), finishedAt: Date.now(), accent: pc.accent, stepTimes });
   store.pcs = store.pcs.filter((p) => p.id !== pc.id);
   persist();
   renderBoard(); renderHistory(); refreshChrome();
@@ -362,4 +519,6 @@ renderBoard();
 renderHistory();
 refreshChrome();
 document.getElementById('addPc').addEventListener('click', addPc);
+document.getElementById('addMany').addEventListener('click', openAddMany);
+document.getElementById('tools').addEventListener('click', openTools);
 document.getElementById('clearHistory').addEventListener('click', () => { if (store.history.some((h) => isToday(h.finishedAt)) && confirm("Retirer les postes terminés aujourd'hui de cette liste ?")) { store.history = store.history.filter((h) => !isToday(h.finishedAt)); persist(); renderHistory(); } });

@@ -409,6 +409,10 @@ main { flex: 1 1 auto; padding: clamp(22px, 3vw, 40px) clamp(20px, 3.5vw, 48px) 
 }
 
 /* ── Établi (6 emplacements : 3 en haut, 3 en bas) ── */
+.board--benchwrap { display: flex; flex-direction: column; gap: 20px; }
+.bench-title { font-family: var(--font-key); font-size: 14px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin: 6px 0 -4px 2px; padding: 4px 8px; width: max-content; max-width: 100%; background: transparent; border: 1px solid transparent; border-radius: 8px; transition: all .15s; }
+.bench-title:hover { border-color: var(--line); color: var(--ink); }
+.bench-title:focus { outline: none; border-color: var(--accent, #7fb0f5); background: var(--surface); color: var(--ink); }
 .board--bench { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch; padding: 22px; border-radius: 18px; border: 1px solid var(--line); background: radial-gradient(circle at center, rgba(255,255,255,.05) 1.4px, transparent 1.7px) 0 0 / 26px 26px, linear-gradient(180deg, #10152b, #0b0f22); box-shadow: inset 0 2px 16px rgba(0,0,0,.55); }
 .bslot { position: relative; display: flex; flex-direction: column; gap: 11px; padding: 18px 16px 16px; min-height: 200px; background: radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1.6px) 9px 9px / 7px 7px no-repeat, radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1.6px) calc(100% - 9px) 9px / 7px 7px no-repeat, var(--surface); border: 1px solid var(--line); border-radius: 15px; box-shadow: var(--shadow-card), inset 0 -16px 26px -18px rgba(0,0,0,.5); overflow: hidden; }
 .bslot__grip { color: var(--ink-faint); font-size: 13px; line-height: 0; letter-spacing: -3px; cursor: grab; flex: 0 0 auto; opacity: .55; }
@@ -434,3 +438,32 @@ main { flex: 1 1 auto; padding: clamp(22px, 3vw, 40px) clamp(20px, 3.5vw, 48px) 
 .bslot__dock::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 18px; font-weight: 700; color: var(--ink-faint); }
 @media (max-width: 980px) { .board--bench { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .board--bench { grid-template-columns: 1fr; } }
+
+/* ── boutons header en lot / outils ── */
+button.navlink { font: inherit; cursor: pointer; }
+
+/* ── Modal ── */
+.modal-back { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(6,9,20,.66); backdrop-filter: blur(3px); animation: modal-in .14s ease; }
+@keyframes modal-in { from { opacity: 0; } to { opacity: 1; } }
+.modal { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 24px 60px -20px rgba(0,0,0,.85); overflow: hidden; }
+.modal__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line-soft); }
+.modal__title { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink); }
+.modal__x { background: none; border: none; color: var(--ink-faint); font-size: 24px; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 8px; }
+.modal__x:hover { color: var(--ink); }
+.modal__body { padding: 18px; }
+
+/* ── Formulaire création en masse ── */
+.mform { display: flex; flex-direction: column; gap: 14px; }
+.mfield { display: flex; flex-direction: column; gap: 6px; }
+.mfield span { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+.mfield input { font-family: var(--font-ui); font-size: 15px; font-weight: 600; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.mfield input:focus { outline: none; border-color: var(--brand-1); }
+.mform__hint { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+.mform__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px; }
+
+/* ── Outils ── */
+.tools { display: flex; flex-direction: column; gap: 10px; }
+.tool { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 13px 15px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: all .15s; }
+.tool:hover { border-color: var(--brand-1); background: var(--surface-2); }
+.tool strong { font-size: 14px; font-weight: 800; color: var(--ink); }
+.tool span { font-size: 12px; font-weight: 600; color: var(--ink-faint); }
