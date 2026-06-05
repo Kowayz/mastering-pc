@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#efe6d8" />
+  <title>Atelier Mastering — Suivi des PC</title>
+  <meta name="description" content="Outil de suivi de mastering PC : nom du poste, check-list des grandes étapes et chronomètre par machine, plusieurs PC en parallèle." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Décor d'ambiance : blobs flottants -->
+  <div class="ambient" aria-hidden="true">
+    <span class="blob blob--1"></span>
+    <span class="blob blob--2"></span>
+    <span class="blob blob--3"></span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__badge" aria-hidden="true">🛠️</span>
+      <div class="brand__text">
+        <h1 class="brand__title">Atelier Mastering</h1>
+        <p class="brand__sub">Suivi des postes en préparation</p>
+      </div>
+    </div>
+
+    <button id="addPc" class="clay-btn clay-btn--accent btn-add" type="button">
+      <span class="btn-add__plus" aria-hidden="true">+</span>
+      <span>Nouveau PC</span>
+    </button>
+  </header>
+
+  <!-- Tableau de bord stats -->
+  <section class="stats" aria-label="Statistiques du jour">
+    <div class="stat clay-inset">
+      <span class="stat__num" id="statActive">0</span>
+      <span class="stat__label">En cours</span>
+    </div>
+    <div class="stat clay-inset">
+      <span class="stat__num" id="statDone">0</span>
+      <span class="stat__label">Terminés aujourd'hui</span>
+    </div>
+    <div class="stat clay-inset">
+      <span class="stat__num" id="statAvg">—</span>
+      <span class="stat__label">Temps moyen / PC</span>
+    </div>
+    <div class="stat clay-inset">
+      <span class="stat__num" id="statTotal">—</span>
+      <span class="stat__label">Temps total du jour</span>
+    </div>
+  </section>
+
+  <!-- PC actifs -->
+  <main>
+    <div id="pcGrid" class="pc-grid"></div>
+
+    <div id="emptyState" class="empty">
+      <span class="empty__emoji" aria-hidden="true">💤</span>
+      <p class="empty__title">Aucun PC en cours</p>
+      <p class="empty__text">Clique sur <strong>« Nouveau PC »</strong> pour démarrer un mastering.</p>
+    </div>
+  </main>
+
+  <!-- Historique -->
+  <section class="history" id="historySection" hidden>
+    <div class="history__head">
+      <h2 class="history__title"><span aria-hidden="true">✅</span> Terminés</h2>
+      <button id="clearHistory" class="clay-btn clay-btn--ghost clay-btn--sm" type="button">Vider l'historique</button>
+    </div>
+    <ul id="historyList" class="history__list"></ul>
+  </section>
+
+  <!-- Template d'une carte PC -->
+  <template id="pcTemplate">
+    <article class="pc-card" tabindex="-1">
+      <div class="pc-card__bar" aria-hidden="true"></div>
+
+      <div class="pc-card__top">
+        <input class="pc-card__name" type="text" maxlength="40"
+               placeholder="Nom du PC…" aria-label="Nom du PC" />
+        <button class="pc-card__del clay-btn clay-btn--circle" type="button" aria-label="Supprimer ce PC" title="Supprimer">×</button>
+      </div>
+
+      <div class="pc-card__clock clay-inset">
+        <time class="pc-card__time" aria-live="off">00:00:00</time>
+        <span class="pc-card__status status-chip">À démarrer</span>
+      </div>
+
+      <div class="pc-card__progress">
+        <div class="progress-track clay-inset">
+          <div class="progress-fill"></div>
+        </div>
+        <span class="pc-card__count">0 / 0 étapes</span>
+      </div>
+
+      <ul class="pc-card__steps"></ul>
+
+      <div class="pc-card__actions">
+        <button class="js-toggle clay-btn clay-btn--play" type="button">▶ Démarrer</button>
+        <button class="js-finish clay-btn clay-btn--finish" type="button">🏁 Terminé</button>
+      </div>
+    </article>
+  </template>
+
+  <footer class="foot">
+    <p>Tout est enregistré dans ce navigateur · les chronos continuent même après un rafraîchissement.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
