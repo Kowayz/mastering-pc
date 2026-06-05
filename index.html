@@ -3,114 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0a0e17" />
-  <title>Atelier Mastering — Suivi des PC</title>
-  <meta name="description" content="Outil de suivi de mastering PC : nom du poste, check-list des grandes étapes et chronomètre par machine, plusieurs PC en parallèle." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>" />
+  <meta name="theme-color" content="#1b2027" />
+  <title>Mastering PC — Atelier</title>
+  <meta name="description" content="Suivi de mastering PC : nom du poste, check-list des grandes étapes et chronomètre qui démarre tout seul. Plusieurs postes en parallèle." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232b2f36'/><text x='50' y='72' font-size='62' font-family='Oswald,sans-serif' font-weight='600' fill='white' text-anchor='middle'>M</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app/app.css" />
 </head>
 <body>
-  <!-- Décor d'ambiance : blobs flottants -->
-  <div class="ambient" aria-hidden="true">
-    <span class="blob blob--1"></span>
-    <span class="blob blob--2"></span>
-    <span class="blob blob--3"></span>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">M</div>
+        <div>
+          <h1 class="brand__name">Mastering PC</h1>
+          <p class="brand__sub">Atelier · suivi des postes</p>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <div class="clock">
+          <time class="clock__time" id="clockTime">--:--</time>
+          <span class="clock__date" id="clockDate">—</span>
+        </div>
+        <div class="counter" id="counter">
+          <span class="counter__dot"></span>
+          <span><strong id="counterNum">0</strong> en cours</span>
+          <span class="counter__sep"></span>
+          <span class="counter__total"><strong id="counterTotal">0</strong> postes</span>
+        </div>
+        <a class="navlink" href="Historique.html"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="8" width="3" height="6.5" rx="1"/><rect x="6.5" y="4.5" width="3" height="10" rx="1"/><rect x="11.5" y="1.5" width="3" height="13" rx="1"/></svg>Historique</a>
+        <button id="addPc" class="key key--brand" type="button"><span class="key__ico">+</span> Nouveau PC</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="board-head">
+        <p class="section-label">Postes en cours</p>
+        <div class="viewswitch" role="group" aria-label="Disposition">
+          <button data-view="rows" type="button" title="Rangées"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2.6" width="14" height="2.4" rx="1.1"/><rect x="1" y="6.8" width="14" height="2.4" rx="1.1"/><rect x="1" y="11" width="14" height="2.4" rx="1.1"/></svg>Rangées</button>
+          <button data-view="mini" type="button" title="Mini-cartes"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.4" y="1.4" width="5.6" height="5.6" rx="1.3"/><rect x="9" y="1.4" width="5.6" height="5.6" rx="1.3"/><rect x="1.4" y="9" width="5.6" height="5.6" rx="1.3"/><rect x="9" y="9" width="5.6" height="5.6" rx="1.3"/></svg>Cartes</button>
+          <button data-view="table" type="button" title="Tableau"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="12" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="1" y1="6.2" x2="15" y2="6.2" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="6.2" x2="6" y2="14" stroke="currentColor" stroke-width="1.5"/></svg>Tableau</button>
+        </div>
+      </div>
+
+      <div id="board" class="board board--rows"></div>
+
+      <div id="empty" class="empty" hidden>
+        <div class="empty__mark">M</div>
+        <p class="empty__title">Aucun poste en préparation</p>
+        <p class="empty__text">Clique sur « Nouveau PC » pour démarrer un mastering.</p>
+      </div>
+
+      <section class="history" id="history" hidden>
+        <div class="history__head">
+          <h2 class="history__title">Terminés aujourd'hui</h2>
+          <div class="history__tools">
+            <a class="history__link" href="Historique.html">Tout l'historique →</a>
+            <button id="clearHistory" class="history__clear" type="button">Vider</button>
+          </div>
+        </div>
+        <div id="historySummary" class="hist-summary"></div>
+        <ul id="historyList" class="history__list"></ul>
+      </section>
+    </main>
+
+    <footer class="foot">
+      Le chrono démarre dès la 1ʳᵉ étape cochée et s'arrête au « Terminé ». Tout est enregistré dans ce navigateur — les chronos continuent même après un rafraîchissement.
+    </footer>
   </div>
 
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand__badge" aria-hidden="true">🛠️</span>
-      <div class="brand__text">
-        <h1 class="brand__title">Atelier Mastering</h1>
-        <p class="brand__sub">Suivi des postes en préparation</p>
-      </div>
-    </div>
-
-    <button id="addPc" class="clay-btn clay-btn--accent btn-add" type="button">
-      <span class="btn-add__plus" aria-hidden="true">+</span>
-      <span>Nouveau PC</span>
-    </button>
-  </header>
-
-  <!-- Tableau de bord stats -->
-  <section class="stats" aria-label="Statistiques du jour">
-    <div class="stat clay-inset">
-      <span class="stat__num" id="statActive">0</span>
-      <span class="stat__label">En cours</span>
-    </div>
-    <div class="stat clay-inset">
-      <span class="stat__num" id="statDone">0</span>
-      <span class="stat__label">Terminés aujourd'hui</span>
-    </div>
-    <div class="stat clay-inset">
-      <span class="stat__num" id="statAvg">—</span>
-      <span class="stat__label">Temps moyen / PC</span>
-    </div>
-    <div class="stat clay-inset">
-      <span class="stat__num" id="statTotal">—</span>
-      <span class="stat__label">Temps total du jour</span>
-    </div>
-  </section>
-
-  <!-- PC actifs -->
-  <main>
-    <div id="pcGrid" class="pc-grid"></div>
-
-    <div id="emptyState" class="empty">
-      <span class="empty__emoji" aria-hidden="true">💤</span>
-      <p class="empty__title">Aucun PC en cours</p>
-      <p class="empty__text">Clique sur <strong>« Nouveau PC »</strong> pour démarrer un mastering.</p>
-    </div>
-  </main>
-
-  <!-- Historique -->
-  <section class="history" id="historySection" hidden>
-    <div class="history__head">
-      <h2 class="history__title"><span aria-hidden="true">✅</span> Terminés</h2>
-      <button id="clearHistory" class="clay-btn clay-btn--ghost clay-btn--sm" type="button">Vider l'historique</button>
-    </div>
-    <ul id="historyList" class="history__list"></ul>
-  </section>
-
-  <!-- Template d'une carte PC -->
-  <template id="pcTemplate">
-    <article class="pc-card" tabindex="-1">
-      <div class="pc-card__bar" aria-hidden="true"></div>
-
-      <div class="pc-card__top">
-        <input class="pc-card__name" type="text" maxlength="40"
-               placeholder="Nom du PC…" aria-label="Nom du PC" />
-        <button class="pc-card__del clay-btn clay-btn--circle" type="button" aria-label="Supprimer ce PC" title="Supprimer">×</button>
-      </div>
-
-      <div class="pc-card__clock clay-inset">
-        <time class="pc-card__time" aria-live="off">00:00:00</time>
-        <span class="pc-card__status status-chip">À démarrer</span>
-      </div>
-
-      <div class="pc-card__progress">
-        <div class="progress-track clay-inset">
-          <div class="progress-fill"></div>
-        </div>
-        <span class="pc-card__count">0 / 0 étapes</span>
-      </div>
-
-      <ul class="pc-card__steps"></ul>
-
-      <div class="pc-card__actions">
-        <button class="js-toggle clay-btn clay-btn--play" type="button">▶ Démarrer</button>
-        <button class="js-finish clay-btn clay-btn--finish" type="button">🏁 Terminé</button>
-      </div>
-    </article>
-  </template>
-
-  <footer class="foot">
-    <p>Tout est enregistré dans ce navigateur · les chronos continuent même après un rafraîchissement.</p>
-  </footer>
-
-  <script src="app.js"></script>
+  <script src="app/app.js"></script>
 </body>
 </html>
