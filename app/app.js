@@ -8,7 +8,7 @@
    ════════════════════════════════════════════════════════════ */
 
 const STEPS = [
-  'Boot menu', 'Windows', 'Hash', 'Autopilote',
+  'Windows', 'Hash', 'Autopilote',
   'Synchro / Renommage', 'Windows Update / MAJ BIOS',
 ];
 
