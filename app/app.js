@@ -17,7 +17,7 @@ const PALETTE = [
   ['#f08ab0', '#f6abc7'], ['#b59cf2', '#cbb8f6'], ['#5fd699', '#85e2b1'], ['#e6c84a', '#f0d877'],
 ];
 
-const VIEWS = ['rows', 'mini', 'table'];
+const VIEWS = ['rows', 'mini', 'table', 'bench'];
 const KEY = 'mastering.app.v6';
 
 // ── persistance ────────────────────────────────────────────────
@@ -170,16 +170,80 @@ function buildTableRow(pc) {
   return tr;
 }
 
+// ── mode établi (6 emplacements, glisser-déposer) ──────────────
+let dragSrcSlot = null;
+
+// Range les PC dans 6 emplacements (ou plus si >6 PC). Renvoie un tableau slot→pc.
+function normalizeSlots() {
+  const n = Math.max(6, store.pcs.length);
+  const occ = new Array(n).fill(null);
+  for (const pc of store.pcs) {
+    if (Number.isInteger(pc.slot) && pc.slot >= 0 && pc.slot < n && occ[pc.slot] === null) occ[pc.slot] = pc;
+    else pc.slot = null;
+  }
+  for (const pc of store.pcs) { if (pc.slot === null) { const f = occ.indexOf(null); if (f >= 0) { occ[f] = pc; pc.slot = f; } } }
+  persist();
+  return occ;
+}
+
+// Déplace / permute un PC d'un emplacement à un autre.
+function moveSlot(a, b) {
+  if (a === b) return;
+  const pa = store.pcs.find((p) => p.slot === a);
+  const pb = store.pcs.find((p) => p.slot === b);
+  if (!pa) return;
+  pa.slot = b; if (pb) pb.slot = a;
+  persist(); renderBoard();
+}
+
+// Glisser-déposer sur une baie (remplie = draggable ; toutes = zone de dépôt).
+function wireBenchDrag(node, i, filled) {
+  node.dataset.slot = i;
+  if (filled) {
+    node.setAttribute('draggable', 'true');
+    node.addEventListener('dragstart', (e) => { dragSrcSlot = i; node.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(i)); } catch (x) {} });
+    node.addEventListener('dragend', () => { dragSrcSlot = null; node.classList.remove('dragging'); document.querySelectorAll('.bslot.drag-over').forEach((x) => x.classList.remove('drag-over')); });
+  }
+  node.addEventListener('dragover', (e) => { if (dragSrcSlot === null) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; node.classList.add('drag-over'); });
+  node.addEventListener('dragleave', () => node.classList.remove('drag-over'));
+  node.addEventListener('drop', (e) => { e.preventDefault(); node.classList.remove('drag-over'); if (dragSrcSlot === null) return; moveSlot(dragSrcSlot, Number(node.dataset.slot)); });
+}
+
+// Une baie occupée.
+function buildBench(pc, no) {
+  const node = el(`
+    <div class="bslot">
+      <div class="bslot__top"><span class="bslot__grip" aria-hidden="true">⋮⋮</span><span class="bslot__no">${no}</span><span class="tag"></span><input class="card__name" type="text" maxlength="40" placeholder="Nom du PC…" aria-label="Nom du PC" /><button class="card__del" type="button" aria-label="Supprimer ce PC" title="Supprimer">×</button></div>
+      <div class="bslot__meter"><time class="timer">00:00:00</time><span class="status"></span></div>
+      <div class="mini__step"><span class="gauge__step"></span><span class="region__count"></span></div>
+      <div class="bslot__actions"><button class="key key--pause key--icon key--sm js-pause" type="button" aria-label="Pause"><span class="js-pause-ico">⏸</span></button><button class="key key--finish key--sm js-finish" type="button"><span class="key__ico">✓</span> Terminé</button></div>
+    </div>`);
+  applyAccent(node, pc); wireName(node, pc); wireButtons(node, pc);
+  const { wrap, segs } = segsFor(pc);
+  node.querySelector('.mini__step').after(wrap);
+  register(pc, node, { segs, timeEl: node.querySelector('.timer'), statusEl: node.querySelector('.status'), stepEl: node.querySelector('.gauge__step'), countEl: node.querySelector('.region__count') });
+  return node;
+}
+
+// Une baie vide.
+function emptySlot(no) {
+  return el(`<div class="bslot bslot--empty"><span class="bslot__no">${no}</span><div class="bslot__empty"><span class="bslot__dock"></span>Emplacement libre</div></div>`);
+}
+
 // ── rendu du tableau de bord ───────────────────────────────────
 function renderBoard() {
   cards.clear();
   board.className = 'board board--' + store.view;
   board.innerHTML = '';
-  emptyEl.hidden = store.pcs.length > 0;
-  board.hidden = store.pcs.length === 0;
-  if (store.pcs.length === 0) return;
+  const bench = store.view === 'bench';
+  emptyEl.hidden = bench || store.pcs.length > 0;
+  board.hidden = !bench && store.pcs.length === 0;
+  if (!bench && store.pcs.length === 0) return;
 
-  if (store.view === 'table') {
+  if (bench) {
+    const occ = normalizeSlots();
+    occ.forEach((pc, i) => { const node = pc ? buildBench(pc, i + 1) : emptySlot(i + 1); wireBenchDrag(node, i, !!pc); board.appendChild(node); });
+  } else if (store.view === 'table') {
     const wrap = el(`<table class="tbl"><thead><tr><th>Poste</th><th>Chrono</th><th>Statut</th><th>Progression</th><th>Étape en cours</th><th class="th-right">Action</th></tr></thead><tbody></tbody></table>`);
     board.appendChild(wrap);
     const tb = wrap.querySelector('tbody');

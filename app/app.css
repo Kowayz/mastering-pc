@@ -407,3 +407,30 @@ main { flex: 1 1 auto; padding: clamp(22px, 3vw, 40px) clamp(20px, 3.5vw, 48px) 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ── Établi (6 emplacements : 3 en haut, 3 en bas) ── */
+.board--bench { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch; padding: 22px; border-radius: 18px; border: 1px solid var(--line); background: radial-gradient(circle at center, rgba(255,255,255,.05) 1.4px, transparent 1.7px) 0 0 / 26px 26px, linear-gradient(180deg, #10152b, #0b0f22); box-shadow: inset 0 2px 16px rgba(0,0,0,.55); }
+.bslot { position: relative; display: flex; flex-direction: column; gap: 11px; padding: 18px 16px 16px; min-height: 200px; background: radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1.6px) 9px 9px / 7px 7px no-repeat, radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1.6px) calc(100% - 9px) 9px / 7px 7px no-repeat, var(--surface); border: 1px solid var(--line); border-radius: 15px; box-shadow: var(--shadow-card), inset 0 -16px 26px -18px rgba(0,0,0,.5); overflow: hidden; }
+.bslot__grip { color: var(--ink-faint); font-size: 13px; line-height: 0; letter-spacing: -3px; cursor: grab; flex: 0 0 auto; opacity: .55; }
+.bslot__grip:hover { opacity: 1; }
+.board--bench .bslot[draggable="true"] { cursor: grab; }
+.board--bench .bslot.dragging { opacity: .45; }
+.board--bench .bslot.drag-over { outline: 2px dashed var(--accent, #7fb0f5); outline-offset: 3px; }
+.bslot::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-deep)); opacity: 0; transition: opacity .2s; }
+.bslot.is-running { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent), var(--shadow-card); }
+.bslot.is-running::before { opacity: 1; }
+.bslot__top { display: flex; align-items: center; gap: 8px; }
+.bslot__no { font-family: var(--font-key); font-size: 12px; font-weight: 600; color: var(--ink-faint); background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 2px 8px; flex: 0 0 auto; }
+.bslot__top .card__name { font-size: 15px; font-weight: 800; padding: 4px 6px; }
+.bslot__meter { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bslot__meter .timer { font-size: 25px; }
+.bslot__meter .status { padding: 4px 10px; font-size: 11px; }
+.bslot__actions { display: flex; gap: 8px; margin-top: auto; }
+.bslot__actions .js-finish { flex: 1 1 auto; }
+.bslot--empty { align-items: center; justify-content: center; gap: 10px; border-style: dashed; background: rgba(255,255,255,.02); color: var(--ink-faint); }
+.bslot--empty .bslot__no { position: absolute; top: 14px; left: 14px; }
+.bslot__empty { display: flex; flex-direction: column; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; }
+.bslot__dock { position: relative; width: 34px; height: 34px; border-radius: 9px; border: 2px dashed currentColor; opacity: .45; }
+.bslot__dock::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 18px; font-weight: 700; color: var(--ink-faint); }
+@media (max-width: 980px) { .board--bench { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .board--bench { grid-template-columns: 1fr; } }
