@@ -98,6 +98,14 @@ body {
 .key--brand:hover { filter: brightness(1.09); }
 .key--brand:active { transform: translateY(5px); box-shadow: 0 0 0 var(--brand-edge), 0 2px 7px rgba(40,30,120,.4); }
 .key:focus-visible { outline: 2px solid #9bb0c8; outline-offset: 3px; }
+
+/* ── bouton scindé : Nouveau PC + petit segment « en lot » ── */
+.splitkey { display: inline-flex; align-items: stretch; gap: 0; }
+.splitkey__main { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.splitkey__more { width: 40px; padding: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; box-shadow: 0 5px 0 var(--brand-edge), 0 9px 16px rgba(18,38,86,.45), inset 0 1px 0 rgba(255,255,255,.2); }
+.splitkey__more svg { width: 16px; height: 16px; }
+.splitkey__more::before { content: ""; position: absolute; left: 0; top: 18%; bottom: 18%; width: 1px; background: rgba(255,255,255,.22); }
+.splitkey__more { position: relative; }
 .key[disabled] { opacity: .45; cursor: not-allowed; filter: grayscale(.3); transform: none; }
 
 /* ──────────────── Layout plein écran ──────────────── */
