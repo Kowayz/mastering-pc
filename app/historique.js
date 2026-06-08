@@ -3,7 +3,7 @@
 /* Page Historique — stats utiles + journal groupé par jour.
    Lit le même localStorage que l'app. */
 
-const KEY = 'mastering.app.v6';
+const KEY = 'mastering.app.v7';
 let store = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })();
 let H = (store.history || []).slice().sort((a, b) => b.finishedAt - a.finishedAt);
 
@@ -22,9 +22,13 @@ function dayLabel(ts) {
 function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
 function save() { store.history = H; localStorage.setItem(KEY, JSON.stringify(store)); }
 
-function mk(grid, num, lab, sub, big) {
-  const c = el(`<div class="statcard"><span class="statcard__num ${big ? 'big' : ''}"></span><span class="statcard__lab"></span>${sub != null ? '<span class="statcard__sub"></span>' : ''}</div>`);
-  c.querySelector('.statcard__num').textContent = num;
+const COLORS = ['#46cf94', '#7fb0f5', '#f0b54a', '#b59cf2', '#f07d6a', '#3fd0bf', '#f08ab0'];
+
+function mk(grid, num, lab, sub, big, acc, color) {
+  const c = el(`<div class="statcard${acc ? ' statcard--acc' : ''}"><span class="statcard__num ${big ? 'big' : ''}"></span><span class="statcard__lab"></span>${sub != null ? '<span class="statcard__sub"></span>' : ''}</div>`);
+  const numEl = c.querySelector('.statcard__num');
+  numEl.textContent = num;
+  if (color) numEl.style.color = color;
   c.querySelector('.statcard__lab').textContent = lab;
   if (sub != null) c.querySelector('.statcard__sub').textContent = sub;
   grid.appendChild(c);
@@ -60,7 +64,7 @@ function render() {
 
   // ── volume ──
   const gv = document.getElementById('statsVolume'); gv.innerHTML = '';
-  mk(gv, String(today.length), "Terminés aujourd'hui", fmtShort(todMs) + ' de mastering', true);
+  mk(gv, String(today.length), "Terminés aujourd'hui", fmtShort(todMs) + ' de mastering', true, true);
   mk(gv, String(week.length), 'Cette semaine', fmtShort(weekMs) + ' au total', true);
   mk(gv, perDay, 'Postes / jour actif', 'sur ' + activeDays + ' jour' + (activeDays > 1 ? 's' : ''), true);
   mk(gv, String(best.c), 'Meilleure journée', shortDate(best.ts), true);
@@ -90,14 +94,16 @@ function render() {
     stepsWrap.hidden = false;
     const rows = [...stepAgg.entries()].map(([label, e]) => ({ label, avg: e.sum / e.n, n: e.n }));
     const max = Math.max(...rows.map((r) => r.avg)) || 1;
-    for (const r of rows) {
+    rows.forEach((r, i) => {
       const row = el(`<div class="stepbar"><span class="stepbar__lab"></span><span class="stepbar__track"><span class="stepbar__fill"></span></span><span class="stepbar__val"></span></div>`);
       row.querySelector('.stepbar__lab').textContent = r.label;
-      row.querySelector('.stepbar__fill').style.width = Math.max(4, (r.avg / max) * 100) + '%';
+      const fill = row.querySelector('.stepbar__fill');
+      fill.style.width = Math.max(4, (r.avg / max) * 100) + '%';
+      fill.style.background = COLORS[i % COLORS.length];
       row.querySelector('.stepbar__val').textContent = fmtShort(r.avg);
       row.title = `${r.label} · moyenne sur ${r.n} poste${r.n > 1 ? 's' : ''}`;
       ss.appendChild(row);
-    }
+    });
   } else {
     stepsWrap.hidden = true;
   }
@@ -135,17 +141,19 @@ function render() {
       curList = wrap.querySelector('.day__list');
     }
     const start = h.startedAt || (h.finishedAt - h.totalMs);
-    const li = el(`<li class="hist">
-      <span class="hist__dot"></span>
-      <span class="hist__name"></span>
-      <span class="hist__times"><span class="hist__t">${clk(start)}</span><span class="hist__arrow">→</span><span class="hist__t">${clk(h.finishedAt)}</span></span>
-      <span class="hist__chip">${h.stepsDone}/${h.stepsTotal}</span>
-      <span class="hist__dur">${fmt(h.totalMs)}</span>
-      <button class="hist__del" type="button" aria-label="Retirer">×</button>
+    const li = el(`<li class="hentry">
+      <span class="hentry__dot"></span>
+      <div class="hentry__id"><span class="hentry__name"></span><span class="hentry__meta"></span></div>
+      <span class="hentry__times"><time class="hentry__t">${clk(start)}</time><span class="hentry__arrow">→</span><time class="hentry__t">${clk(h.finishedAt)}</time></span>
+      <span class="hentry__steps">${h.stepsDone}/${h.stepsTotal}</span>
+      <span class="hentry__dur">${fmt(h.totalMs)}</span>
+      <button class="hentry__del" type="button" aria-label="Retirer">×</button>
     </li>`);
-    if (h.accent) li.querySelector('.hist__dot').style.background = `linear-gradient(150deg, ${h.accent[0]}, ${h.accent[1]})`;
-    li.querySelector('.hist__name').textContent = h.name;
-    li.querySelector('.hist__del').addEventListener('click', () => { H = H.filter((x) => x !== h); save(); render(); });
+    if (h.accent) li.querySelector('.hentry__dot').style.background = h.accent[0];
+    li.querySelector('.hentry__name').textContent = h.name;
+    const meta = [h.srName, h.size ? h.size + '"' : ''].filter(Boolean).join(' · ');
+    const metaEl = li.querySelector('.hentry__meta'); if (meta) metaEl.textContent = meta; else metaEl.remove();
+    li.querySelector('.hentry__del').addEventListener('click', () => { H = H.filter((x) => x !== h); save(); render(); });
     curList.appendChild(li);
   }
 }

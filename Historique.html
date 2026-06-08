@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app/app.css" />
-  <link rel="stylesheet" href="app/historique.css" />
+  <link rel="stylesheet" href="app/app.css?v=33" />
+  <link rel="stylesheet" href="app/historique.css?v=33" />
 </head>
 <body class="hist-page">
   <div class="shell">
@@ -33,24 +33,30 @@
 
     <main>
       <div id="statsWrap">
-        <p class="section-label">Volume</p>
-        <div id="statsVolume" class="stat-grid"></div>
-        <p class="section-label" style="margin-top:30px">Temps &amp; efficacité</p>
-        <div id="statsTime" class="stat-grid"></div>
-        <div id="stepsWrap" hidden>
-          <p class="section-label" style="margin-top:30px">Temps moyen par étape</p>
+        <section class="hsec hsec--volume">
+          <p class="section-label">Volume</p>
+          <div id="statsVolume" class="stat-grid"></div>
+        </section>
+        <section class="hsec hsec--time">
+          <p class="section-label">Temps &amp; efficacité</p>
+          <div id="statsTime" class="stat-grid"></div>
+        </section>
+        <section class="hsec hsec--steps" id="stepsWrap" hidden>
+          <p class="section-label">Temps moyen par étape</p>
           <div id="statsSteps" class="stepstats"></div>
-        </div>
-        <p class="section-label" style="margin-top:30px">Activité · 14 derniers jours</p>
-        <div id="statsTrend" class="trend"></div>
+        </section>
+        <section class="hsec hsec--trend">
+          <p class="section-label">Activité · 14 derniers jours</p>
+          <div id="statsTrend" class="trend"></div>
+        </section>
       </div>
 
       <div class="log-head">
         <p class="section-label">Tous les postes terminés</p>
-        <button id="clearAll" class="history__clear" type="button">Tout vider</button>
+        <button id="clearAll" class="hist-clear" type="button">Tout vider</button>
       </div>
       <div id="logSection">
-        <div id="log"></div>
+        <div id="log" class="hist-log"></div>
       </div>
 
       <div id="empty" class="empty" hidden>
@@ -65,6 +71,6 @@
     </footer>
   </div>
 
-  <script src="app/historique.js"></script>
+  <script src="app/historique.js?v=33"></script>
 </body>
 </html>
