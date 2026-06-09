@@ -27,6 +27,7 @@
 .statcard__sub { font-size: 12px; font-weight: 600; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .statcard--acc { border-color: color-mix(in srgb, var(--sec) 42%, var(--line)); background: color-mix(in srgb, var(--sec) 9%, var(--surface)); }
 .statcard--acc .statcard__num { color: var(--sec); }
+.log-head__tools { display: flex; align-items: center; gap: 12px; }
 
 /* ── temps moyen par étape (barres horizontales) ── */
 .stepstats { display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; box-shadow: var(--shadow-card); }
@@ -70,6 +71,10 @@
 .hentry__del { background: none; border: none; cursor: pointer; color: var(--ink-faint); font-size: 16px; line-height: 0; padding: 4px; border-radius: 7px; opacity: 0; transition: opacity .15s, color .15s; }
 .hentry:hover .hentry__del, .hentry:focus-within .hentry__del { opacity: 1; }
 .hentry__del:hover { color: #f0a3b3; }
+.hentry__steps--manual { color: #2a2710; background: #e6c84a; padding: 2px 9px; border-radius: 999px; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.hentry__dur--edit { cursor: pointer; transition: border-color .15s, color .15s, filter .15s; }
+.hentry__dur--edit:hover { border-color: var(--brand-1); filter: brightness(1.12); }
+.hentry__dur--manual { border-color: #e6c84a; color: #f0d877; }
 
 @media (max-width: 720px) {
   .stepbar { grid-template-columns: 1fr auto; }

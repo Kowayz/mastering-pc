@@ -892,10 +892,11 @@ function renderHistory() {
   histSec.hidden = today.length === 0;
   histSummary.innerHTML = '';
   if (today.length) {
-    const totalMs = today.reduce((s, h) => s + h.totalMs, 0);
+    const timed = today.filter((h) => !h.manual); // les postes manuels comptent en volume, pas en temps
+    const totalMs = timed.reduce((s, h) => s + h.totalMs, 0);
     histSummary.appendChild(el(`<div class="hstat"><span class="hstat__num">${today.length}</span><span class="hstat__lab">terminés</span></div>`));
-    histSummary.appendChild(el(`<div class="hstat"><span class="hstat__num mono">${fmt(totalMs)}</span><span class="hstat__lab">temps total</span></div>`));
-    histSummary.appendChild(el(`<div class="hstat"><span class="hstat__num mono">${fmt(totalMs / today.length)}</span><span class="hstat__lab">temps moyen</span></div>`));
+    histSummary.appendChild(el(`<div class="hstat"><span class="hstat__num mono">${timed.length ? fmt(totalMs) : '—'}</span><span class="hstat__lab">temps total</span></div>`));
+    histSummary.appendChild(el(`<div class="hstat"><span class="hstat__num mono">${timed.length ? fmt(totalMs / timed.length) : '—'}</span><span class="hstat__lab">temps moyen</span></div>`));
   }
   histList.innerHTML = '';
   for (const h of today) {

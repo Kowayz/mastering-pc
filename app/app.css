@@ -103,7 +103,8 @@ body {
 /* ── bouton scindé : Nouveau PC + petit segment « en lot » ── */
 .splitkey { display: inline-flex; align-items: stretch; gap: 0; }
 .splitkey__main { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.splitkey__more { width: 40px; padding: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; background: linear-gradient(180deg, var(--brand-2), var(--brand-edge)); box-shadow: 0 5px 0 var(--brand-edge), 0 9px 16px rgba(18,38,86,.45), inset 0 1px 0 rgba(255,255,255,.2); }
+.splitkey__more { width: 40px; padding: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; filter: brightness(.9); box-shadow: 0 5px 0 var(--brand-edge), 0 9px 16px rgba(18,38,86,.45), inset 0 1px 0 rgba(255,255,255,.2); }
+.splitkey__more:hover { filter: brightness(1); }
 .splitkey__more svg { width: 16px; height: 16px; }
 .splitkey__more::before { content: ""; position: absolute; left: 0; top: 18%; bottom: 18%; width: 1px; background: rgba(255,255,255,.22); }
 .splitkey__more { position: relative; }
@@ -319,6 +320,10 @@ main { flex: 1 1 auto; padding: clamp(22px, 3vw, 40px) clamp(20px, 3.5vw, 48px) 
 .hist__dur { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; padding: 4px 11px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line-soft); white-space: nowrap; }
 .hist__del { background: none; border: none; cursor: pointer; color: var(--ink-faint); font-size: 17px; line-height: 0; padding: 4px 4px; border-radius: 7px; }
 .hist__del:hover { color: #f0a3b3; }
+.hist__chip--manual { color: #2a2710; background: #e6c84a; padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.hist__dur--edit { cursor: pointer; transition: border-color .15s, color .15s, filter .15s; }
+.hist__dur--edit:hover { border-color: var(--brand-1); filter: brightness(1.12); }
+.hist__dur--manual { border-color: #e6c84a; color: #f0d877; }
 
 .foot { text-align: center; padding: 0 20px 36px; color: var(--ink-faint); font-size: 12.5px; font-weight: 600; }
 
@@ -502,6 +507,8 @@ button.navlink { font: inherit; cursor: pointer; }
 .msize__n::-webkit-inner-spin-button, .msize__n::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .msize__start::placeholder { color: var(--ink-faint); font-weight: 500; font-family: var(--font-ui); }
 .msize__n:focus, .msize__start:focus { outline: none; border-color: var(--brand-1); background: var(--surface); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-1) 16%, transparent); }
+.mrow { display: flex; gap: 12px; }
+.mrow .mfield { flex: 1; }
 
 /* ── Outils ── */
 .tools { display: flex; flex-direction: column; gap: 10px; }
